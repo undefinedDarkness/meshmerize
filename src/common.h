@@ -50,7 +50,10 @@ struct node_t {
             struct packed_exits_t exits;  
             unsigned char exitsAsChar;
          };
-        struct packed_exits_t used;
+        union {
+            struct packed_exits_t used;
+            unsigned char usedAsChar;
+        };
     };
 
 struct algorithm_state_t
@@ -73,7 +76,7 @@ struct sim_t
 
 
 // -- SIMULATION --
-void straight(struct sim_t *);
+bool straight(struct sim_t *);
 void nextTick(struct sim_t *);
 void turnLeft(struct sim_t *);
 void turnRight(struct sim_t *);
@@ -91,7 +94,7 @@ struct sensors_t getSensorsOneStepAhead(struct sim_t *sim);
 #define AUTO __auto_type
 
 // -- ALGORITHM --
-void movedHook(struct sim_t *sim);
+bool movedHook(struct sim_t *sim);
 void newSensorDataHook(struct sim_t *sim);
 void algorithm(struct sim_t *, struct sensors_t, struct algorithm_state_t *);
 void printVisitedCells(struct algorithm_state_t *State);

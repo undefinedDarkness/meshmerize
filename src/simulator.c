@@ -73,12 +73,12 @@ struct coordinate_t getLookingAtPoint(struct sim_t *SimulationState)
 
     if (dir == UP)
     {
-        pos.y++;
+        pos.y--;
         return pos;
     }
     else if (dir == DOWN)
     {
-        pos.y--;
+        pos.y++;
         return pos;
     }
     else if (dir == LEFT)
@@ -138,10 +138,11 @@ void straightAmount(struct sim_t *SimulationState, int amt)
     }
 }
 
-void straight(struct sim_t *SimulationState) {
+bool straight(struct sim_t *SimulationState) {
     straightAmount(SimulationState, 1);
-    movedHook(SimulationState);
+    auto S = movedHook(SimulationState);
     newSensorDataHook(SimulationState); 
+    return S;
 }
 
 struct sensors_t getSensorsOneStepAhead(struct sim_t *sim)

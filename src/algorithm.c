@@ -25,6 +25,7 @@ void initAlgorithm(struct algorithm_state_t *State)
 
 static char *getCharForNode(struct node_t n)
 {
+    if (!n.inspected) return "-";
     int totalExits = n.exits.top + n.exits.left + n.exits.right + n.exits.bottom;
     switch (totalExits)
     {
@@ -78,6 +79,8 @@ static char *printOrientation(enum direction_t orientation)
         return "LEFT";
     case RIGHT:
         return "RIGHT";
+    default:
+        return "INVALID";
     }
 }
 
@@ -94,50 +97,130 @@ void newSensorDataHook(struct sim_t *sim)
     AUTO S1 = getSensorsOneStepAhead(sim);
     AUTO Orientation = getOrientation(sim);
     AUTO P = getLookingAtPoint(sim);
+    
 
-    #define Pt sim->algorithm_state.mat[P.y][P.x]
+#define Pt sim->algorithm_state.mat[P.y][P.x]
 
     if (Pt.inspected == true)
         return;
 
     Pt.inspected = true;
 
-    switch (Orientation) {
+    switch (Orientation)
+    {
+    case UP:
+        Pt.exits.left = S.left;
+        Pt.exits.right = S.right;
+        Pt.exits.top = S1.front;
+        break;
+    case DOWN:
+        Pt.exits.bottom = S1.front;
+        Pt.exits.right = S.left;
+        Pt.exits.left = S.right;
+        break;
+    case LEFT:
+        Pt.exits.left = S1.front;
+        Pt.exits.top = S.right;
+        Pt.exits.bottom = S.left;
+        break;
+    case RIGHT:
+        Pt.exits.top = S.left;
+        Pt.exits.bottom = S.right;
+        Pt.exits.right = S1.front;
+        break;
+    }
+
+    printf("Set (%d, %d) to %s [%s] (%d) [%d %d %d] [%d %d %d]\n", P.x, P.y, printNoOfExits(Pt.exits), printOrientation(Orientation),
+            Pt.exits.top + Pt.exits.bottom + Pt.exits.left + Pt.exits.right,
+           S.left, S.front, S.right,
+           S1.left, S1.front, S1.right);
+}
+
+struct packed_exits_t getUnusedExits(unsigned char exits, unsigned char used)
+{
+    // mask exits with used exits
+    exits &= ~used;
+    return *(struct packed_exits_t *)&exits;
+}
+
+void faceNorth(struct sim_t *sim) {
+    sim->player.direction = UP;
+}
+
+bool check_bit(unsigned char bits)
+{
+    return bits && !(bits & (bits-1));
+}
+
+bool movedHook(struct sim_t *sim)
+{
+    AUTO P = getCurrentPoint(sim);
+
+    if (Pt.visited && !check_bit(Pt.exitsAsChar)) {
+        AUTO unused = getUnusedExits(Pt.exitsAsChar, Pt.usedAsChar);
+        printf("Visiting same point (%d, %d)! Point has %s exits, So far have used %s exits, Unused exits are %s\n", 
+            P.x, P.y,
+        printNoOfExits(Pt.exits), printNoOfExits(Pt.used), printNoOfExits(unused));
+
+        // Use the left most unused exits
+        faceNorth(sim);
+
+        if (unused.left) {
+            printf("Using left exit\n");
+            turnLeft(sim);
+            usedExit(sim, LEFT);
+        } else if (unused.top) {
+            printf("Using top exit\n");
+            straight(sim);
+            usedExit(sim, UP);
+        } else if (unused.right) {
+            printf("Using right exit\n");
+            turnRight(sim);
+            usedExit(sim, RIGHT);
+        } else if (unused.bottom) {
+            printf("Using bottom exit\n");
+            turnAround(sim);
+            usedExit(sim, DOWN);
+        }
+
+        return true;
+        // straight(sim);
+    }     
+    return false;
+}
+
+void usedExit(struct sim_t *sim, enum direction_t ndir) {
+    ndir %= 4;
+    // AUTO ndir = directionRelativeToOrientation(getOrientation(sim), dir);
+    AUTO P = getCurrentPoint(sim);
+    printf("Setting used exit for (%d, %d) in direction %s\n", P.x, P.y, printOrientation(ndir));
+    switch (ndir) {
         case UP:
-            Pt.exits.left = S.left;
-            Pt.exits.right = S.right;
-            Pt.exits.top = S1.front;
+            Pt.used.top = true;
             break;
         case DOWN:
-            Pt.exits.bottom = S1.front;
-            Pt.exits.right = S.left;
-            Pt.exits.left = S.right;
+            Pt.used.bottom = true;
             break;
         case LEFT:
-            Pt.exits.left = S1.front;
-            Pt.exits.top = S.right;
-            Pt.exits.bottom = S.left;
+            Pt.used.left = true;
             break;
         case RIGHT:
-            Pt.exits.top = S.left;
-            Pt.exits.bottom = S.right;
-            Pt.exits.right = S1.front;
+            Pt.used.right = true;
             break;
     }
 }
 
-void movedHook(struct sim_t *sim)
-{
-    AUTO P = getCurrentPoint(sim);
-    sim->algorithm_state.mat[P.y][P.x].visited = true;
-}
-
 void algorithm(struct sim_t *sim, struct sensors_t S, struct algorithm_state_t *State)
 {
+    AUTO P = getLookingAtPoint(sim);
+    AUTO O = getOrientation(sim);
+    // To turn clock wise, add 1
+    // To turn anti clock wise, subtract 1
 
     if (S.front && S.left && S.right)
     {
-        straight(sim);
+        if (straight(sim)) return;
+        Pt.visited = true;
 
         S = getSensors(sim);
 
@@ -148,32 +231,40 @@ void algorithm(struct sim_t *sim, struct sensors_t S, struct algorithm_state_t *
         else
         {
             turnLeft(sim);
+            usedExit(sim, O - 1);
         }
     }
     else if (S.left)
     {
-        straight(sim);
-
+        if (straight(sim)) return;
+        Pt.visited = true;
         turnLeft(sim);
+        usedExit(sim, O - 1);
     }
     else if (S.front && S.right)
     {
-        straight(sim);
+        if (straight(sim)) return;
+        Pt.visited = true;
 
         S = getSensors(sim);
         if (!S.front)
         {
             turnRight(sim);
+            usedExit(sim, O + 1);
         }
     }
     else if (S.front)
     {
-        straight(sim);
+        if (straight(sim)) return;
+        Pt.visited = true;
+        usedExit(sim, O);
     }
     else if (S.right)
     {
-        straight(sim);
+        if (straight(sim)) return;
+        Pt.visited = true;
         turnRight(sim);
+        usedExit(sim, O + 1);
     }
     else
     {
