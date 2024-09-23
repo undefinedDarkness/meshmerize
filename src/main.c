@@ -26,7 +26,7 @@ For a C++ project simply rename the file to .cpp and re-run the build script
 
 #include "common.h"
 
-#define MAZE_SCALE 32
+#define MAZE_SCALE 16
 #define SCALE(x) (x * MAZE_SCALE)
 #define SCALEX(x) (x * MAZE_SCALE + MAZE_SCALE / 2)
 
@@ -37,16 +37,21 @@ int main()
 	// Tell the window to use vysnc and work on high DPI displays
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
-	// Create the window and OpenGL context
-	InitWindow(24 * MAZE_SCALE, 24 * MAZE_SCALE, "Hello Raylib");
+	// SimulationState.maze = LoadImage("maze4.png");
+	// SimulationState.player = (struct position_t){
+	// 	.x = 6, .y = 15, .direction = UP};
+
+	SimulationState.maze = LoadImage("maze6.png");
 	SimulationState.player = (struct position_t){
-		.x = 11, .y = 10, .direction = UP};
+		.x = 78, .y = 46, .direction = UP};
+	
+	InitWindow(SimulationState.maze.width * MAZE_SCALE, SimulationState.maze.height * MAZE_SCALE, "Hello Raylib");
 	SimulationState.followed_path = (char *)malloc(2056);
 	SimulationState.algorithm_state = (struct algorithm_state_t){};
 
-	SimulationState.maze = LoadImage("maze5.png");
 	Texture maze = LoadTextureFromImage(SimulationState.maze);
 	initAlgorithm(&SimulationState.algorithm_state);
+	bool autoTick = false;
 	// ImageColorGrayscale(&SimulationState.maze);
 
 	// game loop
@@ -66,14 +71,15 @@ int main()
 		// 	DrawLine(0, SCALE(i), SCALE(24), SCALE(i), (Color){ 0xaa, 0xaa, 0xaa, 0xff });
 		// }
 
-		DrawText(TextFormat("Tick: %i", SimulationState.tick), 10, 10, 20, RAYWHITE);
+		DrawText(TextFormat("Tick: %i", SimulationState.tick), 10, 10, 20, YELLOW);
 		struct sensors_t sensors = getSensors(&SimulationState);
-		DrawText(TextFormat("Sensors: %d %d %d", sensors.left, sensors.front, sensors.right), 10, 40, 20, RAYWHITE);
+		DrawText(TextFormat("Sensors: %d %d %d", sensors.left, sensors.front, sensors.right), 10, 40, 20, YELLOW);
+		DrawText(TextFormat("Player: %d %d", SimulationState.player.x, SimulationState.player.y), 10, 70, 20, YELLOW);
 
 		AUTO visited = SimulationState.algorithm_state.mat;
 
-		for (int i = 0; i < 24; i++)
-			for (int j = 0; j < 24; j++)
+		for (int i = 0; i < SimulationState.maze.height; i++)
+			for (int j = 0; j < SimulationState.maze.width; j++)
 			{
 				if (visited[i][j].visited)
 				{
@@ -170,6 +176,14 @@ int main()
 		else if (IsKeyPressed(KEY_B))
 		{
 			printVisitedCells(&SimulationState.algorithm_state);
+		}
+		else if (IsKeyPressed(KEY_A)) {
+			autoTick = !autoTick;
+		}
+
+		if (autoTick)
+		{
+			nextTick(&SimulationState);
 		}
 
 		if (invalidPlayerState(&SimulationState))

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #define DEBUG
+#define MAZE_SIZE 100
 
 // NOTE: This must be in a cyclic order
 enum direction_t
@@ -58,7 +59,7 @@ struct node_t {
 
 struct algorithm_state_t
 {
-    struct node_t mat[24][24];
+    struct node_t mat[100][100];
     int initialPosition[2];
 };
 struct sim_t
@@ -94,6 +95,7 @@ struct sensors_t getSensorsOneStepAhead(struct sim_t *sim);
 #define AUTO __auto_type
 
 // -- ALGORITHM --
+static char *printOrientation(enum direction_t orientation);
 bool movedHook(struct sim_t *sim);
 void newSensorDataHook(struct sim_t *sim);
 void algorithm(struct sim_t *, struct sensors_t, struct algorithm_state_t *);
