@@ -140,9 +140,15 @@ void straightAmount(struct sim_t *SimulationState, int amt)
 
 bool straight(struct sim_t *SimulationState) {
     straightAmount(SimulationState, 1);
-    auto S = movedHook(SimulationState);
+    AUTO S = movedHook(SimulationState);
     newSensorDataHook(SimulationState); 
     return S;
+}
+
+
+
+void faceNorth(struct sim_t *sim) {
+    sim->player.direction = UP;
 }
 
 struct sensors_t getSensorsOneStepAhead(struct sim_t *sim)
@@ -151,14 +157,14 @@ struct sensors_t getSensorsOneStepAhead(struct sim_t *sim)
     switch (getOrientation(sim)) {
         case UP:
             return (struct sensors_t){
-                .front = isNotColor(GetImageColor(sim->maze, self.x, self.y - 2), BLACK),
                 .left = isNotColor(GetImageColor(sim->maze, self.x - 1, self.y - 2), BLACK),
+                .front = isNotColor(GetImageColor(sim->maze, self.x, self.y - 2), BLACK),
                 .right = isNotColor(GetImageColor(sim->maze, self.x + 1, self.y - 2), BLACK)
             };
         case DOWN:
             return (struct sensors_t){
-                .front = isNotColor(GetImageColor(sim->maze, self.x, self.y + 2), BLACK),
                 .left = isNotColor(GetImageColor(sim->maze, self.x - 1, self.y + 2), BLACK),
+                .front = isNotColor(GetImageColor(sim->maze, self.x, self.y + 2), BLACK),
                 .right = isNotColor(GetImageColor(sim->maze, self.x + 1, self.y + 2), BLACK)
             };
         case LEFT:
@@ -236,5 +242,6 @@ void done(struct sim_t *SimulationState)
 {
     printf("ACTION: DONE\n");
     printf("--- FINISHED ---\n");
+    SimulationState->algorithm_state.final = getCurrentPoint(SimulationState);
     SimulationState->finished = true;
 }

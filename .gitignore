@@ -320,6 +320,9 @@ paket-files/
 # FAKE - F# Make
 .fake/
 
+simulator
+build/external
+
 # CodeRush personal settings
 .cr/personal
 

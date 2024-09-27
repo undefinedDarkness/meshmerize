@@ -43,14 +43,18 @@ int main()
 
 	SimulationState.maze = LoadImage("maze6.png");
 	SimulationState.player = (struct position_t){
-		.x = 78, .y = 46, .direction = UP};
-	
+	.x = 78, .y = 46, .direction = UP};
+
+	// SimulationState.maze = LoadImage("maze.png");
+	// SimulationState.player = (struct position_t){
+	// 	.x = 18, .y = 16, .direction = LEFT};
+
 	InitWindow(SimulationState.maze.width * MAZE_SCALE, SimulationState.maze.height * MAZE_SCALE, "Hello Raylib");
 	SimulationState.followed_path = (char *)malloc(2056);
 	SimulationState.algorithm_state = (struct algorithm_state_t){};
 
 	Texture maze = LoadTextureFromImage(SimulationState.maze);
-	initAlgorithm(&SimulationState.algorithm_state);
+	initAlgorithm(&SimulationState, &SimulationState.algorithm_state);
 	bool autoTick = false;
 	// ImageColorGrayscale(&SimulationState.maze);
 
@@ -71,43 +75,58 @@ int main()
 		// 	DrawLine(0, SCALE(i), SCALE(24), SCALE(i), (Color){ 0xaa, 0xaa, 0xaa, 0xff });
 		// }
 
-		DrawText(TextFormat("Tick: %i", SimulationState.tick), 10, 10, 20, YELLOW);
+		// DrawText(TextFormat("Tick: %i", SimulationState.tick), 10, 10, 20, YELLOW);
 		struct sensors_t sensors = getSensors(&SimulationState);
-		DrawText(TextFormat("Sensors: %d %d %d", sensors.left, sensors.front, sensors.right), 10, 40, 20, YELLOW);
-		DrawText(TextFormat("Player: %d %d", SimulationState.player.x, SimulationState.player.y), 10, 70, 20, YELLOW);
+		// DrawText(TextFormat("Sensors: %d %d %d", sensors.left, sensors.front, sensors.right), 10, 40, 20, YELLOW);
+		// DrawText(TextFormat("Player: %d %d", SimulationState.player.x, SimulationState.player.y), 10, 70, 20, YELLOW);
 
 		AUTO visited = SimulationState.algorithm_state.mat;
 
 		for (int i = 0; i < SimulationState.maze.height; i++)
 			for (int j = 0; j < SimulationState.maze.width; j++)
 			{
+
+				if (visited[i][j].passable)
+				{
+					DrawRectangle(SCALE(j), SCALE(i), MAZE_SCALE, MAZE_SCALE, (Color){0x00, 0xff, 0x00, 0x33});
+				}
+
 				if (visited[i][j].visited)
 				{
-					DrawRectangle(SCALE(j), SCALE(i), MAZE_SCALE, MAZE_SCALE, (Color){0xbb, 0xbb, 0xbb, 0xff});
+					// DrawRectangle(SCALE(j), SCALE(i), MAZE_SCALE, MAZE_SCALE, (Color){0xbb, 0xbb, 0xbb, 0xff});
 
 					if (visited[i][j].inspected)
 					{
 						if (visited[i][j].exits.top)
-							DrawLineEx((Vector2){ SCALE(j), SCALE(i) }, (Vector2){ SCALE(j) + MAZE_SCALE , SCALE(i) }, 2, (Color){0xff, 0x00, 0x00, 0xff});
+							DrawLineEx((Vector2){SCALE(j), SCALE(i)}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i)}, 2, (Color){0xff, 0x00, 0x00, 0xff});
 						if (visited[i][j].exits.left)
-							DrawLineEx((Vector2){ SCALE(j), SCALE(i) }, (Vector2){ SCALE(j), SCALE(i) + MAZE_SCALE }, 2, (Color){0xff, 0x00, 0x00, 0xff});
+							DrawLineEx((Vector2){SCALE(j), SCALE(i)}, (Vector2){SCALE(j), SCALE(i) + MAZE_SCALE}, 2, (Color){0xff, 0x00, 0x00, 0xff});
 						if (visited[i][j].exits.right)
-							DrawLineEx((Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) }, (Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE }, 2, (Color){0xff, 0x00, 0x00, 0xff});
+							DrawLineEx((Vector2){SCALE(j) + MAZE_SCALE, SCALE(i)}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE}, 2, (Color){0xff, 0x00, 0x00, 0xff});
 						if (visited[i][j].exits.bottom)
-							DrawLineEx((Vector2){ SCALE(j), SCALE(i) + MAZE_SCALE }, (Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE }, 2, (Color){0xff, 0x00, 0x00, 0xff});
+							DrawLineEx((Vector2){SCALE(j), SCALE(i) + MAZE_SCALE}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE}, 2, (Color){0xff, 0x00, 0x00, 0xff});
 					}
 
 					// Draw same with different color if used
 					if (visited[i][j].used.top)
-						DrawLineEx((Vector2){ SCALE(j), SCALE(i) }, (Vector2){ SCALE(j) + MAZE_SCALE , SCALE(i) }, 2, (Color){0x00, 0xff, 0x00, 0xff});
+						DrawLineEx((Vector2){SCALE(j), SCALE(i)}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i)}, 2, (Color){0x00, 0xff, 0x00, 0xff});
 					if (visited[i][j].used.left)
-						DrawLineEx((Vector2){ SCALE(j), SCALE(i) }, (Vector2){ SCALE(j), SCALE(i) + MAZE_SCALE }, 2, (Color){0x00, 0xff, 0x00, 0xff});
+						DrawLineEx((Vector2){SCALE(j), SCALE(i)}, (Vector2){SCALE(j), SCALE(i) + MAZE_SCALE}, 2, (Color){0x00, 0xff, 0x00, 0xff});
 					if (visited[i][j].used.right)
-						DrawLineEx((Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) }, (Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE }, 2, (Color){0x00, 0xff, 0x00, 0xff});
+						DrawLineEx((Vector2){SCALE(j) + MAZE_SCALE, SCALE(i)}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE}, 2, (Color){0x00, 0xff, 0x00, 0xff});
 					if (visited[i][j].used.bottom)
-						DrawLineEx((Vector2){ SCALE(j), SCALE(i) + MAZE_SCALE }, (Vector2){ SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE }, 2, (Color){0x00, 0xff, 0x00, 0xff});
+						DrawLineEx((Vector2){SCALE(j), SCALE(i) + MAZE_SCALE}, (Vector2){SCALE(j) + MAZE_SCALE, SCALE(i) + MAZE_SCALE}, 2, (Color){0x00, 0xff, 0x00, 0xff});
 				}
 			}
+
+		if (SimulationState.optimalPath.found)
+		{
+			for (int i = 0; i < SimulationState.optimalPath.length; i++)
+			{
+				struct coordinate_t p = SimulationState.optimalPath.path[i];
+				DrawRectangle(SCALE(p.x), SCALE(p.y), MAZE_SCALE, MAZE_SCALE, (Color){0xf8, 0xde, 0x7e, 0xff});
+			}
+		}
 
 		// DrawCircle(SimulationState.player.x * MAZE_SCALE + MAZE_SCALE / 2, SimulationState.player.y * MAZE_SCALE + MAZE_SCALE / 2, 8, VIOLET);
 		DrawCircle(SCALEX(SimulationState.player.x), SCALEX(SimulationState.player.y), 8, VIOLET);
@@ -177,8 +196,13 @@ int main()
 		{
 			printVisitedCells(&SimulationState.algorithm_state);
 		}
-		else if (IsKeyPressed(KEY_A)) {
+		else if (IsKeyPressed(KEY_A))
+		{
 			autoTick = !autoTick;
+		}
+		else if (IsKeyPressed(KEY_C))
+		{
+			findOptimalPath(&SimulationState);
 		}
 
 		if (autoTick)
@@ -191,6 +215,12 @@ int main()
 			printf("INVALID POSITION\n");
 			SimulationState.player = prev_player;
 		}
+
+		// Draw mouse coordinates on screen
+		// relative to grid
+		DrawText(TextFormat("Mouse Position: [%i, %i]", GetMouseX() / MAZE_SCALE, GetMouseY() / MAZE_SCALE), 5, 5, 20, DARKGRAY);
+		DrawText(TextFormat("Passable: %s", visited[GetMouseY() / MAZE_SCALE][GetMouseX() / MAZE_SCALE].passable ? "true" : "false"), 5, 25, 20, DARKGRAY);
+		// DrawText(TextFormat("Mouse Position: [%i, %i]", GetMouseX(), GetMouseY()), 10, 10, 20, DARKGRAY);
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
 		EndDrawing();
